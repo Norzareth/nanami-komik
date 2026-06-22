@@ -9,9 +9,13 @@ class Pengguna extends Authenticatable
 {
     use Notifiable;
 
+    // 1. Beritahu nama tabel yang benar
     protected $table = 'pengguna';
-    protected $primaryKey = 'ID_User';
+    
+    // 2. Beritahu Primary Key yang benar
+    protected $primaryKey = 'id_user';
 
+    // 3. Kolom yang diizinkan untuk diisi
     protected $fillable = [
         'nama_user', 
         'email_user', 
@@ -19,12 +23,8 @@ class Pengguna extends Authenticatable
         'role_user'
     ];
 
+    // 4. Sembunyikan password agar aman
     protected $hidden = [
         'password',
     ];
-
-    public function getAuthPassword()
-    {
-        return $this->password;
-    }
 }

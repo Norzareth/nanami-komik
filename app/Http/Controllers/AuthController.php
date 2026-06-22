@@ -7,28 +7,39 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    // Menampilkan halaman login
+    // --- 1. FUNGSI BARU UNTUK MENAMPILKAN FORM LOGIN ---
     public function index()
     {
-        return view('login');
+        // 'login' di sini merujuk ke file resources/views/login.blade.php
+        // (Jika file kamu ada di dalam folder auth, ubah menjadi 'auth.login')
+        return view('login'); 
     }
 
-    // Memproses data login (CRUD - Read untuk Autentikasi)
+    // --- 2. FUNGSI PROSES LOGIN (Yang sudah kamu miliki) ---
     public function authenticate(Request $request)
     {
-        $credentials = $request->validate([
+        // 1. Validasi input dari form login
+        $request->validate([
             'email_user' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        // Melakukan pengecekan ke database
-        if (Auth::guard('pengguna')->attempt(['email_user' => $credentials['email_user'], 'password' => $credentials['password']])) {
+        // 2. Cek apakah email dan password cocok
+        if (Auth::guard('web')->attempt(['email_user' => $request->email_user, 'password' => $request->password])) {
             $request->session()->regenerate();
-            return redirect()->intended('/'); // Kembali ke landing page jika sukses
+
+            // 3. CEK ROLE MENGGUNAKAN ANGKA (Dari kolom role_user)
+            $role = Auth::user()->role_user; 
+
+            if ($role == 1) {
+                return redirect()->intended('/admin/dashboard');
+            } elseif ($role == 0) {
+                return redirect()->intended('/katalog-komik'); 
+            }
         }
 
         return back()->withErrors([
-            'email_user' => 'Kredensial yang diberikan tidak cocok dengan data kami.',
-        ]);
+            'email_user' => 'Email atau password salah.',
+        ])->onlyInput('email_user');
     }
 }
