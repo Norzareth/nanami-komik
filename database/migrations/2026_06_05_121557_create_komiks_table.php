@@ -17,7 +17,7 @@ return new class extends Migration
         $table->unsignedBigInteger('id_user')->nullable(); // Foreign Key ke tabel User/Pengguna
         $table->text('sinopsis_komik')->nullable();
         $table->string('nama_komik');
-        $table->string('url_cover')->nullable();
+        $table->text('url_cover');
         $table->date('tanggal_rilis')->nullable();
         $table->string('status_pengerjaan')->nullable();
         $table->timestamps();

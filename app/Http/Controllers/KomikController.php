@@ -3,42 +3,86 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Bookmark;
 use App\Models\Chapter;
-use App\Models\Komik; // Panggil model Komik
+use App\Models\Komik;
+use Illuminate\Support\Facades\Auth;
 
 class KomikController extends Controller
 {
-    // 1. Halaman Home (Menampilkan Komik Rekomendasi saja)
-    public function index() {
-        // Ambil 6 komik secara acak atau berdasarkan kriteria tertentu untuk rekomendasi
-        $rekomendasi = Komik::inRandomOrder()->take(6)->get(); 
-        
-        return view('home', compact('rekomendasi'));
+    // 1. Halaman Home
+    public function index()
+    {
+        $rekomendasi = Komik::withCount('likes')
+                            ->with('ratings')
+                            ->inRandomOrder()
+                            ->take(6)
+                            ->get();
+
+        $topKomik = Komik::withCount('likes')
+                         ->with('ratings')
+                         ->get()
+                         ->sortByDesc(fn($k) => $k->rating_rata)
+                         ->take(5)
+                         ->values();
+
+        return view('home', compact('rekomendasi', 'topKomik'));
     }
 
-    // 2. Halaman Browse (Menampilkan semua komik)
-    public function browse() {
-        $semuaKomik = Komik::all(); // Tarik semua data komik
-        
-        return view('browse', compact('semuaKomik'));
+    // 2. Halaman Browse
+    public function browse(Request $request)
+    {
+        $search = $request->query('search');
+
+        $semuaKomik = Komik::withCount('likes')
+                           ->with('ratings')
+                           ->when($search, fn($query) => $query->where('nama_komik', 'like', "%{$search}%"))
+                           ->latest()
+                           ->get();
+
+        return view('browse', compact('semuaKomik', 'search'));
     }
 
-    // 3. Halaman My Library
-    public function library() {
-        // Nanti ini akan difilter berdasarkan Bookmark user yang sedang login
-        // Untuk sekarang kita tampilkan view-nya dulu
-        return view('library');
+    // 3. Halaman Library
+    public function library()
+    {
+        $bookmarks = collect();
+
+        if (Auth::check()) {
+            $bookmarks = Bookmark::with(['komik' => function ($query) {
+                $query->withCount('likes')->with('ratings');
+            }])
+            ->where('ID_Pengguna', Auth::id())
+            ->get();
+        }
+
+        return view('library', compact('bookmarks'));
     }
 
+    // 4. Detail Komik
     public function show(Komik $komik)
     {
-        $komik->load(['chapters' => function ($query) {
-            $query->orderBy('nomor_chapter');
-        }]);
+        $komik->load([
+            'chapters' => fn($q) => $q->orderBy('nomor_chapter'),
+            'ratings',
+            'likes',
+            'komentar.user',
+            'bookmarks',
+        ]);
 
-        return view('komik.show', compact('komik'));
+        $isBookmarked = false;
+        $bookmarkId = null;
+
+        if (Auth::check()) {
+            $bookmark = $komik->bookmarks->firstWhere('ID_Pengguna', Auth::id());
+            $isBookmarked = $bookmark !== null;
+            $bookmarkId = $bookmark?->ID_Bookmark;
+        }
+
+        return view('komik.show', compact('komik', 'isBookmarked', 'bookmarkId'));
     }
 
+    // 5. Baca Chapter
     public function showChapter(Chapter $chapter)
     {
         $chapter->load('pages', 'komik');

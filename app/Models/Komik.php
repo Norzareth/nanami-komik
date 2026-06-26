@@ -6,14 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\Chapter;
+use App\Models\Rating;
+use App\Models\Komentar;
+use App\Models\Like;
+use App\Models\Bookmark;
 
 class Komik extends Model
 {
-    protected $table = 'komik'; // Sesuai nama tabel di SQL
+    protected $table = 'komik';
     protected $primaryKey = 'id_komik';
-    
-    // Kolom yang boleh diisi
+
     protected $fillable = ['id_user', 'sinopsis_komik', 'nama_komik', 'url_cover', 'tanggal_rilis', 'status_pengerjaan'];
+
+    // =====================
+    // URL Cover Accessor
+    // =====================
 
     public function getUrlCoverAttribute($value)
     {
@@ -51,8 +58,41 @@ class Komik extends Model
         return $value;
     }
 
+    // =====================
+    // Relasi
+    // =====================
+
     public function chapters()
     {
         return $this->hasMany(Chapter::class, 'id_komik', 'id_komik');
+    }
+
+    public function ratings()
+    {
+        return $this->hasMany(Rating::class, 'id_komik', 'id_komik');
+    }
+
+    public function komentar()
+    {
+        return $this->hasMany(Komentar::class, 'id_komik', 'id_komik');
+    }
+
+    public function likes()
+    {
+        return $this->hasMany(Like::class, 'id_komik', 'id_komik');
+    }
+
+    public function bookmarks()
+    {
+        return $this->hasMany(Bookmark::class, 'ID_Komik', 'id_komik');
+    }
+
+    // =====================
+    // Accessor Rating Rata
+    // =====================
+
+    public function getRatingRataAttribute()
+    {
+        return $this->ratings()->avg('nilai') ?? 0;
     }
 }

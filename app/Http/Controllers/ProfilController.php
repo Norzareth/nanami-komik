@@ -9,45 +9,46 @@ use Illuminate\Support\Facades\Hash;
 
 class ProfilController extends Controller
 {
-    // Menampilkan halaman form edit profil milik mahasiswa itu sendiri
+    // fitur read : buat nampilin halaman edit profil buat mahasiswa itu sendiri
     public function edit()
     {
-        // Mengambil data pengguna yang sedang login saat ini
+        // ngambil data mahasiswa/pengguna yg lagi login
         $pengguna = Auth::user();
         
+        // kirim data yg diambil tadi ke halaman edit profil
         return view('profil.edit', compact('pengguna'));
     }
 
-    // Memproses update data ke database
+    // fitur update : buat ngeproses data editan profil yg baru
     public function update(Request $request)
     {
-        // Validasi input dari mahasiswa
+        // divalidasi dulu inputan edit form mahasiswa (biar nda asal2 an isinya)
         $request->validate([
             'nama_user' => 'required|string|max:255',
             'email_user' => 'required|email',
         ]);
 
-        // Mengambil ID mahasiswa yang sedang login (bukan dari URL, agar tidak bisa diretas)
+        // ngambil id mahasiswa yg lagi login
         $user_login = Auth::user();
         
-        // Mencari data pengguna tersebut di database
+        // nyari data mahasiswa itu berdasarkan ID yang tadi diambil
         $pengguna = Pengguna::findOrFail($user_login->ID_User);
 
-        // Menyiapkan data yang boleh diubah (Nama dan Email saja, Role tidak boleh!)
+        // nyiapin data yang boleh diubah (nama,email)
         $dataUpdate = [
             'nama_user' => $request->nama_user,
             'email_user' => $request->email_user,
         ];
 
-        // Jika mahasiswa mengisi form password baru, maka password di-update
+        // kalo mahasiswa ngisi/ngubah password lama jadi baru, nanti langsung di update passwordnya
         if ($request->filled('password')) {
-            $dataUpdate['password'] = Hash::make($request->password);
+            $dataUpdate['password'] = Hash::make($request->password); 
         }
 
-        // Eksekusi update
+        // lngsng di update ke database mysql
         $pengguna->update($dataUpdate);
 
-        // Mengembalikan mahasiswa ke halaman profil
+        // ngembaliin mahasiswa/pengguna ke halaman profil
         return redirect()->route('profil.edit');
     }
 }

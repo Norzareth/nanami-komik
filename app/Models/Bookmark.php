@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Komik;
 
 class Bookmark extends Model
 {
@@ -13,4 +14,9 @@ class Bookmark extends Model
         'ID_Pengguna', 
         'ID_Komik'
     ];
+
+    public function komik()
+    {
+        return $this->belongsTo(Komik::class, 'ID_Komik', 'id_komik');
+    }
 }
